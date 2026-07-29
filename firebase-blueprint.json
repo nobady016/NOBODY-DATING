@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile details and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "maxLength": 50 },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "interestedIn": { "type": "string" },
+        "relationshipGoal": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "bio": { "type": "string", "maxLength": 500 },
+        "job": { "type": "string", "maxLength": 100 },
+        "education": { "type": "string", "maxLength": 100 },
+        "interests": { "type": "array" },
+        "isGhostMode": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "age", "gender"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "A mutual match between two users",
+      "type": "object",
+      "properties": {
+        "matchId": { "type": "string" },
+        "users": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": { "type": "string" },
+        "lastTimestamp": { "type": "string" },
+        "pinLocked": { "type": "boolean" }
+      },
+      "required": ["matchId", "users"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message sent within a match",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "matchId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "string" },
+        "isPrivatePin": { "type": "boolean" }
+      },
+      "required": ["id", "matchId", "senderId", "text", "timestamp"]
+    },
+    "SafetyReport": {
+      "title": "SafetyReport",
+      "description": "Safety report filed against a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "reportedUserId": { "type": "string" },
+        "reportedUserName": { "type": "string" },
+        "category": { "type": "string" },
+        "details": { "type": "string", "maxLength": 1000 },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "reporterId", "reportedUserId", "category"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles indexed by Auth UID"
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Matches between users"
+    },
+    "/matches/{matchId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Chat messages within a match"
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/SafetyReport" },
+      "description": "Safety reports"
+    }
+  }
+}

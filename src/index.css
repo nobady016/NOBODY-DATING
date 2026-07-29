@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #050505;
+    color: #ffffff;
+  }
+
+  h1, h2, h3, .font-serif-editorial {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom Editorial Glow & Accent utilities */
+.ambient-glow-orange {
+  background: radial-gradient(circle, rgba(255,78,0,0.18) 0%, rgba(5,5,5,0) 70%);
+}
+
+.ambient-glow-purple {
+  background: radial-gradient(circle, rgba(112,0,255,0.12) 0%, rgba(5,5,5,0) 70%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF 0%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-bg-pill {
+  background-color: #D4AF37;
+  color: #000000;
+}
+
+.editorial-border {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.editorial-card {
+  background-color: #0a0a0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+

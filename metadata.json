@@ -1,0 +1,6 @@
+{
+  "name": "NOBODY",
+  "description": "A premium, ultra-smooth, privacy-focused, 100% free dating experience with Incognito Ghost Mode, AI Icebreakers, swipe card physics, voice chat, and matches.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
