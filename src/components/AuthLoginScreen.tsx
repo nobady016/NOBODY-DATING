@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  signInAnonymously
+  sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import {
@@ -29,7 +29,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export const AuthLoginScreen: React.FC = () => {
-  const { loginWithUser } = useApp();
+  const { loginWithUser, sendVerificationEmail, postSignupMessage } = useApp();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [email, setEmail] = useState('');
@@ -42,13 +42,47 @@ export const AuthLoginScreen: React.FC = () => {
   const [termsAgreed, setTermsAgreed] = useState(true);
 
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPoliciesModal, setShowPoliciesModal] = useState(false);
 
-  // Play Store Compliant Login / Sign Up Handler
+  // Resend Firebase Verification Link to Gmail
+  const handleResendEmail = async () => {
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setResendLoading(true);
+
+    try {
+      if (auth.currentUser) {
+        const res = await sendVerificationEmail(auth.currentUser);
+        setInfoMessage(res.message);
+      } else if (email && password) {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const res = await sendVerificationEmail(cred.user);
+        setInfoMessage(res.message);
+      } else {
+        setErrorMessage('Please enter your Email and Password above to resend the verification link.');
+      }
+    } catch (err: any) {
+      console.error('Resend verification error:', err);
+      let msg = err.message || 'Could not resend verification email.';
+      if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many verification requests sent. Please check your Gmail inbox/spam or wait a few minutes.';
+      }
+      setErrorMessage(msg);
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  // Play Store Compliant Login / Sign Up Handler with Strict Email Verification
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
+    setUnverifiedEmail(null);
 
     if (!ageConfirmed) {
       setErrorMessage('Google Play Policy requires users to be at least 18 years old.');
@@ -63,61 +97,110 @@ export const AuthLoginScreen: React.FC = () => {
 
     try {
       if (mode === 'signup') {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+        // 1. Create account
+        let user;
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          user = userCredential.user;
+        } catch (authErr: any) {
+          console.error('Firebase createUser error:', authErr);
+          let msg = authErr.message || 'Failed to create account.';
+          if (authErr.code === 'auth/email-already-in-use') {
+            msg = 'This email is already registered. Please click "Sign In" above to log in.';
+          } else if (authErr.code === 'auth/invalid-email') {
+            msg = 'Invalid email address format. Please enter a valid Gmail / Email address.';
+          } else if (authErr.code === 'auth/weak-password') {
+            msg = 'Password should be at least 6 characters long.';
+          } else if (authErr.code === 'auth/operation-not-allowed') {
+            msg = '🚨 Firebase Console Configuration Required:\n\nFirebase Project "gen-lang-client-0601145241" me Email/Password provider Disabled hai.\n\nSteps:\n1. console.firebase.google.com me Project "gen-lang-client-0601145241" open karein.\n2. Authentication -> Sign-in method -> Email/Password par click karein.\n3. Pehla switch "Enable" (Email/Password) turn ON karein aur SAVE click karein.\n4. Phir wapis aakar Sign Up karein.';
+          }
+          setErrorMessage(msg);
+          setLoading(false);
+          return;
+        }
 
-        // Save initial profile to Firestore
+        // 2. Send Email Verification Link via AppContext authentication service
+        let verificationMsg = `📩 Registration successful! A verification email has been sent to ${email}. Please check your inbox (and Spam folder) to verify your account before gaining full access.`;
+        try {
+          const res = await sendVerificationEmail(user);
+          if (res.message) verificationMsg = res.message;
+        } catch (verifyErr: any) {
+          console.warn('Failed to send verification email:', verifyErr);
+        }
+
+        // 3. Save initial profile to Firestore with emailVerified: false
         const profileData = {
           uid: user.uid,
           name: fullName || 'NOBODY User',
           email: user.email,
+          emailVerified: false,
           age: parseInt(ageInput) || 22,
           gender: 'Man',
           createdAt: new Date().toISOString()
         };
+        await setDoc(doc(db, 'profiles', user.uid), profileData).catch(() => {});
 
-        await setDoc(doc(db, 'profiles', user.uid), profileData);
+        // 4. Do NOT auto-login! Inform user to check inbox & verify before gaining access
+        setUnverifiedEmail(user.email);
+        setInfoMessage(verificationMsg);
+        setMode('signin');
+      } else {
+        // Sign In Mode
+        let user;
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          user = userCredential.user;
+        } catch (authErr: any) {
+          console.error('Firebase signIn error:', authErr);
+          let msg = authErr.message || 'Failed to sign in.';
+          if (
+            authErr.code === 'auth/invalid-credential' ||
+            authErr.code === 'auth/wrong-password' ||
+            authErr.code === 'auth/user-not-found'
+          ) {
+            msg = 'Incorrect email or password. Please check your credentials and try again.';
+          } else if (authErr.code === 'auth/operation-not-allowed') {
+            msg = '🚨 Firebase Console Configuration Required:\n\nFirebase Project "gen-lang-client-0601145241" me Email/Password provider Disabled hai.\n\nSteps:\n1. console.firebase.google.com me Project "gen-lang-client-0601145241" open karein.\n2. Authentication -> Sign-in method -> Email/Password par click karein.\n3. Pehla switch "Enable" (Email/Password) turn ON karein aur SAVE click karein.\n4. Phir wapis aakar Sign In karein.';
+          }
+          setErrorMessage(msg);
+          setLoading(false);
+          return;
+        }
+
+        // Reload user state to get latest emailVerified property from Firebase
+        await user.reload().catch(() => {});
+
+        // Strict Check: User MUST have verified their email
+        if (!user.emailVerified) {
+          setUnverifiedEmail(user.email);
+          setErrorMessage(`⚠️ Your email (${user.email}) is NOT verified yet! Please check your Gmail inbox (or Spam folder) for the verification link, then click Sign In.`);
+          setLoading(false);
+          return;
+        }
+
+        // Email verified -> Update Firestore & proceed with login
+        await setDoc(doc(db, 'profiles', user.uid), { emailVerified: true }, { merge: true }).catch(() => {});
+
+        let userName = fullName || email.split('@')[0] || 'NOBODY User';
+        let userAge = parseInt(ageInput) || 22;
+
+        const userDoc = await getDoc(doc(db, 'profiles', user.uid)).catch(() => null);
+        if (userDoc && userDoc.exists()) {
+          const data = userDoc.data();
+          userName = data.name || userName;
+          userAge = data.age || userAge;
+        }
 
         loginWithUser({
           id: user.uid,
-          name: fullName || 'NOBODY User',
-          age: parseInt(ageInput) || 22,
+          name: userName,
+          age: userAge,
           gender: 'Man'
         });
-      } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Fetch user from Firestore if exists
-        const userDoc = await getDoc(doc(db, 'profiles', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          loginWithUser({
-            id: user.uid,
-            name: data.name || 'NOBODY User',
-            age: data.age || 22,
-            gender: data.gender || 'Man'
-          });
-        } else {
-          loginWithUser({
-            id: user.uid,
-            name: user.displayName || user.email?.split('@')[0] || 'NOBODY User',
-            age: 22,
-            gender: 'Man'
-          });
-        }
       }
     } catch (err: any) {
-      console.error('Firebase Auth Error:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setErrorMessage('This email is already registered. Please Sign In.');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        setErrorMessage('Invalid email or password. Please try again.');
-      } else if (err.code === 'auth/weak-password') {
-        setErrorMessage('Password should be at least 6 characters long.');
-      } else {
-        setErrorMessage(err.message || 'Authentication failed. Please check your network.');
-      }
+      console.error('General auth error:', err);
+      setErrorMessage(err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -145,31 +228,7 @@ export const AuthLoginScreen: React.FC = () => {
       });
     } catch (err: any) {
       console.warn('Google Sign-In popup closed or cancelled:', err);
-      // Fallback guest login if popup blocked in iframe environment
-      handleGuestLogin();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Play Store Reviewer / Guest Fast Login
-  const handleGuestLogin = async () => {
-    setLoading(true);
-    try {
-      const userCred = await signInAnonymously(auth);
-      loginWithUser({
-        id: userCred.user.uid,
-        name: 'Guest Explorer',
-        age: 24,
-        gender: 'Man'
-      });
-    } catch (err) {
-      loginWithUser({
-        id: 'guest_' + Math.random().toString(36).substring(2, 8),
-        name: 'Guest Explorer',
-        age: 24,
-        gender: 'Man'
-      });
+      setErrorMessage(err.message || 'Google Sign-In was cancelled or failed.');
     } finally {
       setLoading(false);
     }
@@ -223,9 +282,41 @@ export const AuthLoginScreen: React.FC = () => {
 
         {/* Error Alert Box */}
         {errorMessage && (
-          <div className="p-3.5 rounded-2xl bg-[#FF4E00]/10 border border-[#FF4E00]/40 text-[#FF4E00] text-xs font-mono flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{errorMessage}</span>
+          <div className="p-3.5 rounded-2xl bg-[#FF4E00]/10 border border-[#FF4E00]/40 text-[#FF4E00] text-xs font-mono flex flex-col gap-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="whitespace-pre-line">{errorMessage}</span>
+            </div>
+            {(unverifiedEmail || errorMessage.includes('NOT verified')) && (
+              <button
+                type="button"
+                onClick={handleResendEmail}
+                disabled={resendLoading}
+                className="mt-1 px-3 py-1.5 bg-[#FF4E00]/20 hover:bg-[#FF4E00]/30 border border-[#FF4E00]/50 rounded-xl text-white text-[11px] font-bold self-start transition flex items-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>{resendLoading ? 'Sending Gmail link...' : 'Resend Verification Email to Gmail'}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Info / Success Alert Box */}
+        {(postSignupMessage || infoMessage) && (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs font-mono flex flex-col gap-2">
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+              <span className="whitespace-pre-line">{postSignupMessage || infoMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleResendEmail}
+              disabled={resendLoading}
+              className="mt-1 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-xl text-emerald-300 text-[11px] font-bold self-start transition flex items-center gap-1.5"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>{resendLoading ? 'Sending...' : 'Didn\'t get email? Resend Verification Link'}</span>
+            </button>
           </div>
         )}
 
@@ -381,15 +472,6 @@ export const AuthLoginScreen: React.FC = () => {
               />
             </svg>
             <span>Continue with Google</span>
-          </button>
-
-          <button
-            onClick={handleGuestLogin}
-            disabled={loading}
-            className="w-full py-2.5 rounded-2xl bg-black border border-white/10 text-white/70 font-mono text-[11px] uppercase tracking-wider hover:text-white hover:border-white/20 transition flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Quick Guest / Reviewer Login</span>
           </button>
         </div>
 
