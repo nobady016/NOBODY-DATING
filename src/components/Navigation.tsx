@@ -31,7 +31,7 @@ export const Navigation: React.FC = () => {
             </span>
             <div className="flex items-center gap-2.5">
               <img
-                src="/src/assets/images/nobody_heart_logo_1785665535054.jpg"
+                src="/logo.jpg"
                 alt="NOBODY Logo"
                 referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-xl object-cover border border-[#FF4E00]/50 shadow-lg group-hover:scale-105 transition-transform"

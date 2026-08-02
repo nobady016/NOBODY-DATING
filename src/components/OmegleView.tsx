@@ -13,6 +13,7 @@ import {
   query,
   limit,
   orderBy,
+  where,
   serverTimestamp
 } from 'firebase/firestore';
 import {
@@ -38,7 +39,9 @@ import {
   Copy,
   Users,
   Sparkles,
-  Link as LinkIcon
+  Link as LinkIcon,
+  EyeOff,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -88,8 +91,39 @@ const DEMO_STRANGERS: Stranger[] = [
   }
 ];
 
+const GHOST_DEMO_STRANGERS: Stranger[] = [
+  {
+    id: 'ghost_demo_1',
+    name: 'Ghost Stranger (Spectre)',
+    location: 'Stealth Encrypted Vault',
+    interests: ['Anonymity', 'Cybersecurity', 'Nightlife'],
+    videoBgUrl: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&q=80&w=800',
+    greetingMessage: '👻 Ghost Mode active! Pure anonymous 1-on-1 stealth connection.',
+    isRealUser: false
+  },
+  {
+    id: 'ghost_demo_2',
+    name: 'Ghost Stranger (Shadow)',
+    location: 'Encrypted Relay Node',
+    interests: ['Privacy', 'Crypto', 'AI'],
+    videoBgUrl: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=800',
+    greetingMessage: '⚡ Ghost-to-Ghost encrypted video room. Real identity remains completely hidden!',
+    isRealUser: false
+  }
+];
+
 export const OmegleView: React.FC = () => {
-  const { currentUser, reportUser } = useApp();
+  const { currentUser, ghostSettings, updateGhostSetting, reportUser, addMatchFromStranger } = useApp();
+
+  // Match Pool Mode (Ghost Mode vs Normal Mode Pool)
+  const [matchPoolMode, setMatchPoolMode] = useState<'ghost' | 'normal'>(
+    ghostSettings.alwaysInvisible ? 'ghost' : 'normal'
+  );
+
+  // Synchronize pool mode if ghostSettings changes globally
+  useEffect(() => {
+    setMatchPoolMode(ghostSettings.alwaysInvisible ? 'ghost' : 'normal');
+  }, [ghostSettings.alwaysInvisible]);
 
   // Match State
   const [isSearching, setIsSearching] = useState(false);
@@ -205,47 +239,67 @@ export const OmegleView: React.FC = () => {
     setAddedAsMatch(false);
     setIsRealP2P(false);
 
+    const isGhostMatching = matchPoolMode === 'ghost';
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     setChatLog([
       {
         sender: 'system',
-        text: '🌐 Connecting to global WebRTC server... Searching for live online stranger...',
+        text: isGhostMatching
+          ? '👻 Searching in GHOST MODE POOL... Strictly looking for live online Ghost Mode users only.'
+          : '⚡ Searching in NORMAL MODE POOL... Looking for live online Normal Mode users.',
         time: nowTime
       }
     ]);
 
     try {
-      // Check Firestore omegle_queue for existing waiting room
+      // Query Firestore omegle_queue strictly filtered by isGhostMode
       const queueRef = collection(db, 'omegle_queue');
-      const q = query(queueRef, orderBy('createdAt', 'asc'), limit(1));
+      const q = query(
+        queueRef,
+        where('isGhostMode', '==', isGhostMatching),
+        limit(5)
+      );
       const queueSnap = await getDocs(q);
 
-      if (!queueSnap.empty) {
-        // Someone is waiting! Join as Callee
-        const waitingItem = queueSnap.docs[0];
-        const queueData = waitingItem.data();
+      let foundWaitingRoom = false;
+
+      for (const itemDoc of queueSnap.docs) {
+        const queueData = itemDoc.data();
         const roomId = queueData.roomId;
 
-        // Delete from queue so nobody else takes it
-        await deleteDoc(doc(db, 'omegle_queue', waitingItem.id));
+        // Verify room exists and matches current mode
+        const roomSnap = await getDoc(doc(db, 'omegle_rooms', roomId));
+        if (roomSnap.exists()) {
+          const roomData = roomSnap.data();
+          if (roomData.status === 'waiting' && roomData.isGhostMode === isGhostMatching) {
+            // Delete from queue so nobody else takes it
+            await deleteDoc(doc(db, 'omegle_queue', itemDoc.id));
+            // Join room as Callee
+            await joinRoomAsCallee(roomId, isGhostMatching);
+            foundWaitingRoom = true;
+            break;
+          }
+        } else {
+          // Clean up orphaned queue doc
+          await deleteDoc(doc(db, 'omegle_queue', itemDoc.id)).catch(() => {});
+        }
+      }
 
-        // Join room as Callee
-        await joinRoomAsCallee(roomId);
-      } else {
-        // No one waiting. Create a room as Caller
+      if (!foundWaitingRoom) {
+        // No one waiting in this pool. Create a room as Caller
         const newRoomId = 'room_' + Math.random().toString(36).substring(2, 9);
-        await createRoomAsCaller(newRoomId);
+        await createRoomAsCaller(newRoomId, isGhostMatching);
       }
     } catch (err) {
-      console.warn('Firestore matchmaking queue error, falling back to instant room:', err);
-      // Fallback: Create room directly
+      console.warn('Firestore matchmaking queue error, falling back to instant caller room:', err);
       const fallbackRoomId = 'room_' + Math.random().toString(36).substring(2, 9);
-      await createRoomAsCaller(fallbackRoomId);
+      await createRoomAsCaller(fallbackRoomId, isGhostMatching);
     }
   };
 
   // 3. Create Room as Caller (Peer 1)
-  const createRoomAsCaller = async (roomId: string) => {
+  const createRoomAsCaller = async (roomId: string, isGhostMatching: boolean) => {
     setCurrentRoomId(roomId);
     setRole('caller');
 
@@ -285,7 +339,8 @@ export const OmegleView: React.FC = () => {
 
     const roomWithOffer = {
       roomId,
-      callerName: currentUser.name || 'Anonymous Stranger',
+      isGhostMode: isGhostMatching,
+      callerName: isGhostMatching ? 'Ghost Stranger' : (currentUser.name || 'Anonymous Stranger'),
       callerSDP: {
         type: offer.type,
         sdp: offer.sdp
@@ -296,9 +351,10 @@ export const OmegleView: React.FC = () => {
 
     await setDoc(roomRef, roomWithOffer);
 
-    // Add to omegle_queue so others can discover this room
+    // Add to omegle_queue tagged with isGhostMode
     await addDoc(collection(db, 'omegle_queue'), {
       roomId,
+      isGhostMode: isGhostMatching,
       createdAt: serverTimestamp()
     });
 
@@ -306,13 +362,19 @@ export const OmegleView: React.FC = () => {
     const unsubRoom = onSnapshot(roomRef, async snapshot => {
       const data = snapshot.data();
       if (data && !pc.currentRemoteDescription && data.calleeSDP) {
+        // Enforce mode match
+        if (data.isGhostMode !== isGhostMatching) {
+          console.warn('Mismatched mode attempt blocked.');
+          return;
+        }
+
         const rtcSessionDescription = new RTCSessionDescription(data.calleeSDP);
         await pc.setRemoteDescription(rtcSessionDescription);
 
         setCurrentStranger({
           id: 'real_' + (data.calleeName || 'Peer'),
-          name: data.calleeName || 'Live Stranger',
-          location: 'Worldwide Online',
+          name: data.calleeName || (isGhostMatching ? 'Ghost Stranger' : 'Live Stranger'),
+          location: isGhostMatching ? 'Stealth Encrypted Vault' : 'Worldwide Online',
           interests: interests,
           isRealUser: true
         });
@@ -326,7 +388,9 @@ export const OmegleView: React.FC = () => {
           ...prev,
           {
             sender: 'system',
-            text: `⚡ Real 1-on-1 WebRTC Video Connection Established! Connected with ${data.calleeName || 'Live Stranger'}.`,
+            text: isGhostMatching
+              ? `👻 Ghost-to-Ghost Encrypted Video Call Connected! (${data.calleeName || 'Ghost Stranger'})`
+              : `⚡ Real 1-on-1 WebRTC Video Connection Established! (${data.calleeName || 'Live Stranger'})`,
             time
           }
         ]);
@@ -348,7 +412,7 @@ export const OmegleView: React.FC = () => {
     // Setup live chat listener
     listenToRoomChat(roomId);
 
-    // If no human joins within 8s, provide notice or AI Stranger option
+    // If no human joins within 8s, notify
     setTimeout(() => {
       if (!pc.remoteDescription) {
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -356,7 +420,9 @@ export const OmegleView: React.FC = () => {
           ...prev,
           {
             sender: 'system',
-            text: `⌛ Still waiting in global queue for a live stranger. Share your Room Code "${roomId}" or click "Test on 2nd Tab"!`,
+            text: isGhostMatching
+              ? `⌛ Waiting in GHOST POOL for another Ghost Mode user... Room Code: "${roomId}"`
+              : `⌛ Waiting in NORMAL POOL for a live stranger... Room Code: "${roomId}"`,
             time
           }
         ]);
@@ -365,7 +431,7 @@ export const OmegleView: React.FC = () => {
   };
 
   // 4. Join Room as Callee (Peer 2)
-  const joinRoomAsCallee = async (roomId: string) => {
+  const joinRoomAsCallee = async (roomId: string, isGhostMatching: boolean) => {
     setCurrentRoomId(roomId);
     setRole('callee');
 
@@ -378,6 +444,14 @@ export const OmegleView: React.FC = () => {
     }
 
     const roomData = roomSnap.data();
+
+    // STRICT ISOLATION ENFORCEMENT
+    if (roomData.isGhostMode !== isGhostMatching) {
+      console.warn(`Mode mismatch! Room isGhostMode=${roomData.isGhostMode}, User isGhostMode=${isGhostMatching}`);
+      startMatching();
+      return;
+    }
+
     const pc = new RTCPeerConnection(ICE_SERVERS);
     pcRef.current = pc;
 
@@ -417,7 +491,7 @@ export const OmegleView: React.FC = () => {
     await setDoc(
       roomRef,
       {
-        calleeName: currentUser.name || 'Anonymous Stranger',
+        calleeName: isGhostMatching ? 'Ghost Stranger' : (currentUser.name || 'Anonymous Stranger'),
         calleeSDP: {
           type: answer.type,
           sdp: answer.sdp
@@ -440,8 +514,8 @@ export const OmegleView: React.FC = () => {
 
     setCurrentStranger({
       id: 'real_' + (roomData.callerName || 'Peer'),
-      name: roomData.callerName || 'Live Stranger',
-      location: 'Worldwide Online',
+      name: roomData.callerName || (isGhostMatching ? 'Ghost Stranger' : 'Live Stranger'),
+      location: isGhostMatching ? 'Stealth Encrypted Vault' : 'Worldwide Online',
       interests: interests,
       isRealUser: true
     });
@@ -455,7 +529,9 @@ export const OmegleView: React.FC = () => {
       ...prev,
       {
         sender: 'system',
-        text: `⚡ Real 1-on-1 WebRTC Video Connection Established! Connected with ${roomData.callerName || 'Live Stranger'}.`,
+        text: isGhostMatching
+          ? `👻 Ghost-to-Ghost Encrypted Video Call Connected! (${roomData.callerName || 'Ghost Stranger'})`
+          : `⚡ Real 1-on-1 WebRTC Video Connection Established! (${roomData.callerName || 'Live Stranger'})`,
         time
       }
     ]);
@@ -470,12 +546,13 @@ export const OmegleView: React.FC = () => {
     setIsSearching(true);
     setShowRoomCodeModal(false);
 
+    const isGhostMatching = matchPoolMode === 'ghost';
     const cleanCode = joinRoomInput.trim();
-    await joinRoomAsCallee(cleanCode);
+    await joinRoomAsCallee(cleanCode, isGhostMatching);
     setJoinRoomInput('');
   };
 
-  // 6. Connect with Demo AI Companion
+  // 6. Connect with Demo Companion
   const connectDemoCompanion = () => {
     cleanUpWebRTC();
     setIsSearching(false);
@@ -483,19 +560,23 @@ export const OmegleView: React.FC = () => {
     setRole('demo');
     setIsRealP2P(false);
 
-    const randomDemo = DEMO_STRANGERS[Math.floor(Math.random() * DEMO_STRANGERS.length)];
+    const isGhostMatching = matchPoolMode === 'ghost';
+    const pool = isGhostMatching ? GHOST_DEMO_STRANGERS : DEMO_STRANGERS;
+    const randomDemo = pool[Math.floor(Math.random() * pool.length)];
     setCurrentStranger(randomDemo);
 
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setChatLog([
       {
         sender: 'system',
-        text: `✨ Connected with ${randomDemo.name}! (${randomDemo.location})`,
+        text: isGhostMatching
+          ? `👻 Connected in GHOST POOL with ${randomDemo.name}!`
+          : `✨ Connected in NORMAL POOL with ${randomDemo.name}! (${randomDemo.location})`,
         time
       },
       {
         sender: 'stranger',
-        text: randomDemo.greetingMessage || 'Hello! Awesome to meet you on NOBODY Omegle!',
+        text: randomDemo.greetingMessage || 'Hello! Welcome to NOBODY live video chat!',
         time
       }
     ]);
@@ -598,13 +679,15 @@ export const OmegleView: React.FC = () => {
   };
 
   const handleSaveMatch = () => {
+    if (!currentStranger) return;
+    addMatchFromStranger(currentStranger);
     setAddedAsMatch(true);
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setChatLog(prev => [
       ...prev,
       {
         sender: 'system',
-        text: `❤️ Mutual Connection saved! You can now message ${currentStranger?.name} anytime in your Matches.`,
+        text: `❤️ Connection saved! ${currentStranger.name} has been added to your Matches tab for permanent chat.`,
         time
       }
     ]);
@@ -652,6 +735,63 @@ export const OmegleView: React.FC = () => {
           >
             Enter Code
           </button>
+        </div>
+
+        {/* Match Pool Mode Selector (Ghost vs Normal Mode Isolation) */}
+        <div className="bg-black/60 border border-white/10 rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {matchPoolMode === 'ghost' ? (
+                <div className="p-1.5 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#D4AF37]">
+                  <EyeOff className="w-4 h-4" />
+                </div>
+              ) : (
+                <div className="p-1.5 rounded-full bg-[#FF4E00]/20 border border-[#FF4E00]/50 text-[#FF4E00]">
+                  <Zap className="w-4 h-4" />
+                </div>
+              )}
+              <div>
+                <span className="text-xs font-mono font-bold text-white uppercase tracking-wider block">
+                  {matchPoolMode === 'ghost' ? '👻 Ghost Mode Pool' : '⚡ Normal Mode Pool'}
+                </span>
+                <span className="text-[10px] text-white/50 block">
+                  {matchPoolMode === 'ghost'
+                    ? 'Matches ONLY with other Ghost Mode users'
+                    : 'Matches ONLY with Normal public users'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+              <button
+                onClick={() => {
+                  setMatchPoolMode('normal');
+                  updateGhostSetting('alwaysInvisible', false);
+                }}
+                className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase font-bold transition ${
+                  matchPoolMode === 'normal'
+                    ? 'bg-[#FF4E00] text-white shadow-md'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                Normal
+              </button>
+              <button
+                onClick={() => {
+                  setMatchPoolMode('ghost');
+                  updateGhostSetting('alwaysInvisible', true);
+                }}
+                className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase font-bold transition flex items-center gap-1 ${
+                  matchPoolMode === 'ghost'
+                    ? 'bg-[#D4AF37] text-black shadow-md'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                <EyeOff className="w-3 h-3" />
+                Ghost
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Interest Filter Tags */}

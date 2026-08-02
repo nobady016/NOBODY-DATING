@@ -283,7 +283,7 @@ export const AuthLoginScreen: React.FC = () => {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center p-1 rounded-2xl bg-gradient-to-br from-[#FF4E00] via-[#D4AF37] to-[#7000FF] shadow-2xl">
             <img
-              src="/src/assets/images/nobody_heart_logo_1785665535054.jpg"
+              src="/logo.jpg"
               alt="NOBODY App Logo"
               referrerPolicy="no-referrer"
               className="w-16 h-16 rounded-xl object-cover"

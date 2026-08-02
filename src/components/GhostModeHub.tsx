@@ -49,9 +49,9 @@ export const GhostModeHub: React.FC = () => {
         {/* Master Always Invisible Toggle */}
         <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between">
           <div>
-            <span className="font-semibold text-sm text-white block">Always Invisible Mode</span>
+            <span className="font-semibold text-sm text-white block">Always Invisible / Ghost Mode</span>
             <span className="text-[11px] text-white/50">
-              Browse profiles without leaving a trace or appearing in stacks
+              Matches strictly with other Ghost Mode users only
             </span>
           </div>
           <button
@@ -66,6 +66,17 @@ export const GhostModeHub: React.FC = () => {
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>
+        </div>
+
+        {/* Ghost Pool Strict Isolation Policy Card */}
+        <div className="mt-4 p-3.5 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-2xl flex items-start gap-3 text-xs">
+          <Shield className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-bold text-[#D4AF37] block">Strict Ghost Pool Matching Isolation</span>
+            <p className="text-white/70 leading-relaxed text-[11px]">
+              When Ghost Mode is ON, you enter a separate isolated matching pool. You will <strong>ONLY match with other Ghost Mode users</strong> — Normal Mode users can never see, receive, or match with your profile or calls.
+            </p>
+          </div>
         </div>
       </div>
 

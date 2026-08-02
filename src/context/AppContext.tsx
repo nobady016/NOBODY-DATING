@@ -59,6 +59,7 @@ interface AppContextType {
   resetSwipeStack: () => void;
   verifyPinAndUnlock: (inputPin: string) => boolean;
   setIsPinModalOpen: (open: boolean) => void;
+  addMatchFromStranger: (stranger: any) => string;
 }
 
 const DEFAULT_GHOST_SETTINGS: GhostSettings = {
@@ -482,6 +483,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addMatchFromStranger = (stranger: any) => {
+    const existing = matches.find(m => m.profile.id === stranger.id || m.profile.name === stranger.name);
+    if (existing) return existing.id;
+
+    const matchProfile: DatingProfile = {
+      id: stranger.id || `stranger_${Date.now()}`,
+      name: stranger.name || 'Anonymous Stranger',
+      age: 24,
+      gender: 'woman',
+      bio: stranger.greetingMessage || 'Connected via NOBODY Omegle 1-on-1 Video Chat.',
+      photos: stranger.videoBgUrl ? [stranger.videoBgUrl] : ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800'],
+      job: stranger.isRealUser ? 'Omegle User' : 'Community Member',
+      education: stranger.location || 'Worldwide',
+      heightCm: 172,
+      locationName: stranger.location || 'Nearby',
+      distanceKm: 2,
+      relationshipGoal: 'Coffee & casual chats',
+      interests: stranger.interests || ['Connection', 'Chat'],
+      lifestyle: {},
+      languages: ['English'],
+      isVerified: true,
+      isOnline: true
+    };
+
+    const newMatchId = `match_omegle_${Date.now()}`;
+    const newMatch: Match = {
+      id: newMatchId,
+      profile: matchProfile,
+      matchedAt: 'Just now',
+      unreadCount: 0,
+      lastMessage: 'Connected via Omegle Video Chat!',
+      lastMessageTime: 'Just now',
+      isSecretMatch: ghostSettings.secretMatches,
+      isPrivateChatLocked: ghostSettings.chatLockEnabled
+    };
+
+    setMatches(prev => [newMatch, ...prev]);
+    setMessages(prev => ({
+      ...prev,
+      [newMatchId]: [
+        {
+          id: `msg_init_${Date.now()}`,
+          matchId: newMatchId,
+          senderId: stranger.id,
+          text: `👋 Hey! We connected on NOBODY Live Video Chat! Glad to add you to my connections.`,
+          timestamp: 'Just now',
+          type: 'text',
+          isRead: true
+        }
+      ]
+    }));
+
+    return newMatchId;
+  };
+
   const reportUser = (
     targetUserId: string,
     targetUserName: string,
@@ -579,7 +635,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resetOnboarding,
         resetSwipeStack,
         verifyPinAndUnlock,
-        setIsPinModalOpen
+        setIsPinModalOpen,
+        addMatchFromStranger
       }}
     >
       {children}
