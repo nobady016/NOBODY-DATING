@@ -29,7 +29,13 @@ export const Navigation: React.FC = () => {
             <span className="text-[9px] uppercase tracking-[0.35em] text-white/40 font-semibold mb-0.5">
               The Future of Connection
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/src/assets/images/nobody_heart_logo_1785665535054.jpg"
+                alt="NOBODY Logo"
+                referrerPolicy="no-referrer"
+                className="w-10 h-10 rounded-xl object-cover border border-[#FF4E00]/50 shadow-lg group-hover:scale-105 transition-transform"
+              />
               <h1 className="text-3xl font-serif italic tracking-tighter leading-none text-white group-hover:text-[#D4AF37] transition-colors">
                 NOBODY
               </h1>

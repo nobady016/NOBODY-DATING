@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import {
@@ -47,6 +48,41 @@ export const AuthLoginScreen: React.FC = () => {
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPoliciesModal, setShowPoliciesModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
+  // Firebase Forgot Password Reset Link Handler
+  const handlePasswordReset = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const targetEmail = resetEmail.trim() || email.trim();
+    if (!targetEmail) {
+      setErrorMessage('Please enter your email address to reset password.');
+      return;
+    }
+    setResetLoading(true);
+    setErrorMessage(null);
+    setInfoMessage(null);
+
+    try {
+      await sendPasswordResetEmail(auth, targetEmail);
+      setInfoMessage(`📩 Password reset link sent to ${targetEmail}. Please check your Gmail inbox (and Spam folder) to set a new password.`);
+      setShowForgotPasswordModal(false);
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      let msg = err.message || 'Failed to send password reset link.';
+      if (err.code === 'auth/user-not-found') {
+        msg = 'No account found with this email address. Please check your spelling or Sign Up.';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Invalid email address format.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many reset attempts. Please wait a few minutes or check your email inbox.';
+      }
+      setErrorMessage(msg);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Resend Firebase Verification Link to Gmail
   const handleResendEmail = async () => {
@@ -245,8 +281,13 @@ export const AuthLoginScreen: React.FC = () => {
       <div className="max-w-md w-full bg-[#0a0a0f] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6 relative z-10 shadow-2xl backdrop-blur-xl">
         {/* Play Store App Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center p-3 rounded-full bg-gradient-to-br from-[#FF4E00] via-[#D4AF37] to-[#7000FF] shadow-xl">
-            <ShieldCheck className="w-8 h-8 text-black" />
+          <div className="inline-flex items-center justify-center p-1 rounded-2xl bg-gradient-to-br from-[#FF4E00] via-[#D4AF37] to-[#7000FF] shadow-2xl">
+            <img
+              src="/src/assets/images/nobody_heart_logo_1785665535054.jpg"
+              alt="NOBODY App Logo"
+              referrerPolicy="no-referrer"
+              className="w-16 h-16 rounded-xl object-cover"
+            />
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-2">
@@ -376,9 +417,23 @@ export const AuthLoginScreen: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-[10px] font-mono text-white/60 uppercase tracking-wider block mb-1">
-              Password
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] font-mono text-white/60 uppercase tracking-wider block">
+                Password
+              </label>
+              {mode === 'signin' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setShowForgotPasswordModal(true);
+                  }}
+                  className="text-[10px] font-mono text-[#D4AF37] hover:underline font-bold transition"
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <Key className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
               <input
@@ -538,6 +593,74 @@ export const AuthLoginScreen: React.FC = () => {
                   I Understand & Accept
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Forgot Password Modal */}
+      <AnimatePresence>
+        {showForgotPasswordModal && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#0a0a0f] border border-white/20 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative text-left"
+            >
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(false)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                <div className="p-2.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif italic text-lg text-white">Reset Password</h3>
+                  <p className="text-[10px] font-mono text-white/50">Send password reset link to your email</p>
+                </div>
+              </div>
+
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-mono text-white/60 uppercase tracking-wider block mb-1">
+                    Your Registered Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                    <input
+                      type="email"
+                      required
+                      value={resetEmail}
+                      onChange={e => setResetEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full bg-black/70 border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-xs text-white focus:outline-none focus:border-[#D4AF37] font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswordModal(false)}
+                    className="w-1/2 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-xs uppercase"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="w-1/2 py-3 rounded-full bg-[#D4AF37] text-black font-mono font-bold text-xs uppercase shadow-xl hover:opacity-90 disabled:opacity-50"
+                  >
+                    {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

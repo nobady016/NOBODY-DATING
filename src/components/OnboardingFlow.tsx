@@ -235,7 +235,35 @@ export const OnboardingFlow: React.FC = () => {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
             <div>
               <h2 className="text-3xl font-serif italic text-white">Profile Avatar</h2>
-              <p className="text-xs font-mono text-white/50 mt-1 uppercase tracking-wider">Choose a portrait style.</p>
+              <p className="text-xs font-mono text-white/50 mt-1 uppercase tracking-wider">Upload your photo or choose a preset style.</p>
+            </div>
+
+            {/* Custom Photo Upload Button */}
+            <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-[#D4AF37]" />
+                <span className="text-xs font-mono text-white/80">Upload custom photo from gallery</span>
+              </div>
+              <label className="px-3 py-1.5 rounded-xl bg-[#D4AF37] text-black text-xs font-mono font-bold uppercase tracking-wider cursor-pointer hover:opacity-90 transition shrink-0">
+                Upload
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        if (ev.target?.result) {
+                          setSelectedPhoto(ev.target.result as string);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

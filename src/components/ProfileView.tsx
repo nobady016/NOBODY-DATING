@@ -16,9 +16,23 @@ import {
   Lock,
   LogOut,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Upload,
+  Plus,
+  Star,
+  Image as ImageIcon,
+  X,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
+const PRESET_PHOTOS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=1000',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=1000',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=1000',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=1000',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=1000'
+];
 
 export const ProfileView: React.FC = () => {
   const { currentUser, updateCurrentUser, resetOnboarding, logoutUser, deleteUserAccount } = useApp();
@@ -35,6 +49,71 @@ export const ProfileView: React.FC = () => {
   const [generatedBios, setGeneratedBios] = useState<string[]>([]);
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
+
+  // Photo state
+  const [customPhotoUrl, setCustomPhotoUrl] = useState('');
+  const [photoMessage, setPhotoMessage] = useState<string | null>(null);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setPhotoMessage('❌ Please select an image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    if (file.size > 12 * 1024 * 1024) {
+      setPhotoMessage('❌ File size exceeds 12MB. Please choose a smaller image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        const existingPhotos = currentUser.photos || [];
+        const newPhotos = [result, ...existingPhotos.filter(p => p !== result)];
+        updateCurrentUser({ photos: newPhotos });
+        setPhotoMessage('✅ Profile photo updated successfully!');
+        setTimeout(() => setPhotoMessage(null), 3500);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddUrlPhoto = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = customPhotoUrl.trim();
+    if (!url) return;
+    const existingPhotos = currentUser.photos || [];
+    const newPhotos = [url, ...existingPhotos.filter(p => p !== url)];
+    updateCurrentUser({ photos: newPhotos });
+    setCustomPhotoUrl('');
+    setPhotoMessage('✅ Image URL added as main profile photo!');
+    setTimeout(() => setPhotoMessage(null), 3500);
+  };
+
+  const handleSetMainPhoto = (photoUrl: string) => {
+    const existingPhotos = currentUser.photos || [];
+    const newPhotos = [photoUrl, ...existingPhotos.filter(p => p !== photoUrl)];
+    updateCurrentUser({ photos: newPhotos });
+    setPhotoMessage('⭐ Main profile photo updated!');
+    setTimeout(() => setPhotoMessage(null), 3000);
+  };
+
+  const handleRemovePhoto = (photoUrl: string) => {
+    const existingPhotos = currentUser.photos || [];
+    if (existingPhotos.length <= 1) {
+      setPhotoMessage('❌ You must keep at least 1 profile photo.');
+      setTimeout(() => setPhotoMessage(null), 3000);
+      return;
+    }
+    const newPhotos = existingPhotos.filter(p => p !== photoUrl);
+    updateCurrentUser({ photos: newPhotos });
+    setPhotoMessage('Photo removed.');
+    setTimeout(() => setPhotoMessage(null), 3000);
+  };
 
   const handleGenerateBio = async () => {
     setIsGeneratingBio(true);
@@ -82,17 +161,34 @@ export const ProfileView: React.FC = () => {
     <div className="max-w-md md:max-w-xl mx-auto px-4 py-4 pb-28 space-y-6">
       {/* Profile Header Card */}
       <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-6 text-center space-y-4 relative overflow-hidden shadow-2xl">
-        <div className="relative w-28 h-28 mx-auto">
-          <div className="w-full h-full rounded-full p-[2px] bg-gradient-to-tr from-[#FF4E00] via-[#D4AF37] to-white shadow-xl">
+        <div className="relative w-32 h-32 mx-auto group">
+          <div className="w-full h-full rounded-full p-[3px] bg-gradient-to-tr from-[#FF4E00] via-[#D4AF37] to-white shadow-2xl overflow-hidden">
             <img
-              src={currentUser.photos[0]}
+              src={currentUser.photos[0] || PRESET_PHOTOS[0]}
               alt={currentUser.name}
               className="w-full h-full object-cover rounded-full"
             />
           </div>
+
+          {/* Quick Camera File Upload Overlay */}
+          <label
+            htmlFor="profile-header-photo-input"
+            className="absolute bottom-0 right-0 p-2.5 rounded-full bg-[#D4AF37] text-black shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition border-2 border-[#0a0a0f] flex items-center justify-center z-10"
+            title="Upload or Change Profile Photo"
+          >
+            <Camera className="w-4 h-4" />
+            <input
+              id="profile-header-photo-input"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </label>
+
           {currentUser.isVerified && (
             <span
-              className="absolute bottom-1 right-1 p-1.5 rounded-full bg-sky-400 text-black shadow-lg border-2 border-[#050505]"
+              className="absolute top-0 right-0 p-1.5 rounded-full bg-sky-400 text-black shadow-lg border-2 border-[#0a0a0f]"
               title="Verified Profile"
             >
               <ShieldCheck className="w-4 h-4" />
@@ -130,12 +226,127 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
 
+        {photoMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-xs text-[#D4AF37] font-mono flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{photoMessage}</span>
+          </motion.div>
+        )}
+
         {verificationSuccess && (
           <div className="p-2.5 rounded-2xl bg-[#00FF85]/10 border border-[#00FF85]/30 text-xs text-[#00FF85] font-mono flex items-center justify-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-[#00FF85]" />
             <span>AI Face Scan Verified! Badge Unlocked.</span>
           </div>
         )}
+      </div>
+
+      {/* Profile Photo Management Gallery */}
+      <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-4 text-left shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4 text-[#D4AF37]" />
+            <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#D4AF37]">
+              My Profile Photos ({currentUser.photos.length})
+            </h2>
+          </div>
+          <span className="text-[10px] font-mono text-white/50">Tap camera to upload</span>
+        </div>
+
+        {/* Current Photos Grid */}
+        <div className="grid grid-cols-3 gap-3">
+          {currentUser.photos.map((photo, index) => {
+            const isMain = index === 0;
+            return (
+              <div
+                key={index}
+                className={`relative rounded-2xl overflow-hidden h-28 border-2 transition group ${
+                  isMain ? 'border-[#D4AF37] shadow-xl ring-2 ring-[#D4AF37]/30' : 'border-white/10 hover:border-white/30'
+                }`}
+              >
+                <img src={photo} alt={`Profile ${index + 1}`} className="w-full h-full object-cover" />
+                
+                {/* Main badge */}
+                {isMain ? (
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-[#D4AF37] text-black text-[9px] font-mono font-bold uppercase flex items-center gap-1 shadow-md">
+                    <Star className="w-2.5 h-2.5 fill-black" />
+                    <span>Main</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleSetMainPhoto(photo)}
+                    className="absolute top-1.5 left-1.5 p-1 rounded-full bg-black/70 hover:bg-[#D4AF37] text-white hover:text-black transition text-[9px] font-mono flex items-center gap-0.5 opacity-0 group-hover:opacity-100"
+                    title="Set as Main Profile Photo"
+                  >
+                    <Star className="w-3 h-3" />
+                  </button>
+                )}
+
+                {/* Remove button */}
+                <button
+                  onClick={() => handleRemovePhoto(photo)}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/80 hover:bg-red-500 text-white transition opacity-0 group-hover:opacity-100"
+                  title="Remove photo"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Device Upload Tile */}
+          <label
+            htmlFor="gallery-upload-input"
+            className="h-28 rounded-2xl border-2 border-dashed border-[#D4AF37]/40 hover:border-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37]/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition text-[#D4AF37]"
+          >
+            <Upload className="w-5 h-5" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-center px-1">Upload Photo</span>
+            <input
+              id="gallery-upload-input"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* URL Add Photo Option */}
+        <form onSubmit={handleAddUrlPhoto} className="flex gap-2 pt-1">
+          <input
+            type="url"
+            value={customPhotoUrl}
+            onChange={e => setCustomPhotoUrl(e.target.value)}
+            placeholder="Or paste photo URL..."
+            className="flex-1 bg-black/60 border border-white/10 rounded-2xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37] font-mono"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-[#D4AF37] text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition"
+          >
+            Add URL
+          </button>
+        </form>
+
+        {/* Quick Presets */}
+        <div className="pt-2 border-t border-white/5 space-y-2">
+          <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">Quick Presets</span>
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {PRESET_PHOTOS.map((presetUrl, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSetMainPhoto(presetUrl)}
+                className="w-12 h-12 rounded-xl overflow-hidden border border-white/20 shrink-0 hover:border-[#D4AF37] hover:scale-105 transition"
+              >
+                <img src={presetUrl} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Editing Mode */}
