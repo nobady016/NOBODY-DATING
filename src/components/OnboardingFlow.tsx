@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import appLogo from '../assets/images/nobody_heart_logo_1785665535054.jpg';
 import { DatingProfile, Gender, RelationshipGoal } from '../types';
 import {
   Flame,
@@ -110,13 +111,18 @@ export const OnboardingFlow: React.FC = () => {
         {/* Step 1: Welcome & Age */}
         {step === 1 && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-            <div className="w-16 h-16 rounded-full bg-[#FF4E00]/10 border border-[#FF4E00]/40 flex items-center justify-center">
-              <Flame className="w-8 h-8 text-[#FF4E00]" />
-            </div>
-
-            <div>
-              <h1 className="text-3xl font-serif italic text-white">Welcome to NOBODY</h1>
-              <p className="text-xs font-mono text-white/50 mt-1 uppercase tracking-wider">100% Free • Zero Paywalls</p>
+            <div className="flex items-center gap-3">
+              <img
+                src={appLogo}
+                alt="NOBODY Logo"
+                referrerPolicy="no-referrer"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.jpg'; }}
+                className="w-14 h-14 rounded-2xl object-cover border border-[#FF4E00]/50 shadow-xl"
+              />
+              <div>
+                <h1 className="text-3xl font-serif italic text-white">Welcome to NOBODY</h1>
+                <p className="text-xs font-mono text-white/50 mt-0.5 uppercase tracking-wider">100% Free • Zero Paywalls</p>
+              </div>
             </div>
 
             <div className="space-y-3 text-xs">

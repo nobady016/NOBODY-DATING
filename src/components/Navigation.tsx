@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import appLogo from '../assets/images/nobody_heart_logo_1785665535054.jpg';
 import {
   Flame,
   MessageCircle,
@@ -31,9 +32,10 @@ export const Navigation: React.FC = () => {
             </span>
             <div className="flex items-center gap-2.5">
               <img
-                src="/logo.jpg"
+                src={appLogo}
                 alt="NOBODY Logo"
                 referrerPolicy="no-referrer"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.jpg'; }}
                 className="w-10 h-10 rounded-xl object-cover border border-[#FF4E00]/50 shadow-lg group-hover:scale-105 transition-transform"
               />
               <h1 className="text-3xl font-serif italic tracking-tighter leading-none text-white group-hover:text-[#D4AF37] transition-colors">

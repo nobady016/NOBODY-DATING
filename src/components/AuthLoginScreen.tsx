@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { auth, db } from '../firebase';
+import appLogo from '../assets/images/nobody_heart_logo_1785665535054.jpg';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -283,9 +284,10 @@ export const AuthLoginScreen: React.FC = () => {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center p-1 rounded-2xl bg-gradient-to-br from-[#FF4E00] via-[#D4AF37] to-[#7000FF] shadow-2xl">
             <img
-              src="/logo.jpg"
+              src={appLogo}
               alt="NOBODY App Logo"
               referrerPolicy="no-referrer"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.jpg'; }}
               className="w-16 h-16 rounded-xl object-cover"
             />
           </div>
