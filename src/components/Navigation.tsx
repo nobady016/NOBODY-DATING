@@ -20,8 +20,8 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Top Editorial Header */}
-      <header className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-xl border-b border-white/10 px-6 py-4">
-        <div className="max-w-md md:max-w-xl mx-auto flex items-end justify-between">
+      <header className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto flex items-end justify-between gap-6">
           {/* Brand & Editorial Eyebrow */}
           <div
             onClick={() => setActiveTab('discover')}
@@ -79,9 +79,9 @@ export const Navigation: React.FC = () => {
       </header>
 
       {/* Floating Editorial Bottom Navigation */}
-      <nav className="fixed bottom-6 left-0 right-0 z-40 px-4 pointer-events-none">
-        <div className="max-w-md md:max-w-xl mx-auto pointer-events-auto">
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full h-16 flex items-center justify-between px-6 shadow-2xl">
+      <nav className="fixed bottom-4 sm:bottom-6 left-0 right-0 z-40 px-3 sm:px-6 pointer-events-none">
+        <div className="max-w-3xl mx-auto pointer-events-auto">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full min-h-16 flex items-center justify-between gap-1 px-3 sm:px-6 py-2 shadow-2xl">
             {/* Discover */}
             <button
               onClick={() => setActiveTab('discover')}

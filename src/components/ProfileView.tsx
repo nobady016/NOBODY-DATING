@@ -158,7 +158,7 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md md:max-w-xl mx-auto px-4 py-4 pb-28 space-y-6">
+    <div className="w-full max-w-5xl mx-auto px-0 sm:px-2 lg:px-8 py-5 pb-32 space-y-6">
       {/* Profile Header Card */}
       <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-6 text-center space-y-4 relative overflow-hidden shadow-2xl">
         <div className="relative w-32 h-32 mx-auto group">

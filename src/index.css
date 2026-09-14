@@ -45,3 +45,21 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+  .desktop-panel-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+

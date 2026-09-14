@@ -121,7 +121,7 @@ export const DiscoverSwipe: React.FC = () => {
   const currentPhotoIdx = activePhotoIndex[topProfile.id] || 0;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-3 pb-28 relative space-y-3">
+    <div className="w-full max-w-5xl mx-auto px-0 sm:px-2 lg:px-8 py-4 sm:py-6 pb-32 relative space-y-5">
       {/* Omegle Quick Video Chat Launch Banner */}
       <div
         onClick={() => setActiveTab('omegle')}
@@ -147,7 +147,7 @@ export const DiscoverSwipe: React.FC = () => {
       </div>
 
       {/* Swipe Stack Container */}
-      <div className="relative h-[560px] w-full">
+      <div className="relative h-[min(68vh,680px)] min-h-[520px] w-full max-w-2xl mx-auto">
         <AnimatePresence>
           <motion.div
             key={topProfile.id}
