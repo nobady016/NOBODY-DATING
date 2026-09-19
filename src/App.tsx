@@ -44,7 +44,7 @@ const MainAppContent: React.FC = () => {
       </div>
 
       {/* Main Tab Router View */}
-      <main className="flex-1 w-full max-w-md md:max-w-xl mx-auto relative z-10">
+      <main className="flex-1 w-full relative z-10">
         {activeTab === 'discover' && <DiscoverSwipe />}
         {activeTab === 'omegle' && <OmegleView />}
         {activeTab === 'matches' && <MatchesView />}

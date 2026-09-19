@@ -20,12 +20,12 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Top Editorial Header */}
-      <header className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-xl border-b border-white/10 px-6 py-4">
-        <div className="max-w-md md:max-w-xl mx-auto flex items-end justify-between">
+      <header className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 lg:px-8 py-3.5">
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Brand & Editorial Eyebrow */}
           <div
             onClick={() => setActiveTab('discover')}
-            className="flex flex-col cursor-pointer group select-none"
+            className="flex flex-col cursor-pointer group select-none shrink-0"
           >
             <span className="text-[9px] uppercase tracking-[0.35em] text-white/40 font-semibold mb-0.5">
               The Future of Connection
@@ -36,19 +36,104 @@ export const Navigation: React.FC = () => {
                 alt="NOBODY Logo"
                 referrerPolicy="no-referrer"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.jpg'; }}
-                className="w-10 h-10 rounded-xl object-cover border border-[#FF4E00]/50 shadow-lg group-hover:scale-105 transition-transform"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-[#FF4E00]/50 shadow-lg group-hover:scale-105 transition-transform"
               />
-              <h1 className="text-3xl font-serif italic tracking-tighter leading-none text-white group-hover:text-[#D4AF37] transition-colors">
+              <h1 className="text-2xl sm:text-3xl font-serif italic tracking-tighter leading-none text-white group-hover:text-[#D4AF37] transition-colors">
                 NOBODY
               </h1>
-              <span className="text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#00FF85]/10 text-[#00FF85] border border-[#00FF85]/30">
+              <span className="hidden sm:inline-block text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#00FF85]/10 text-[#00FF85] border border-[#00FF85]/30">
                 100% Free
               </span>
             </div>
           </div>
 
+          {/* Desktop Nav Bar (Visible on Lg+ screens) */}
+          <nav className="hidden lg:flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur-md shadow-inner">
+            <button
+              onClick={() => setActiveTab('discover')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'discover'
+                  ? 'bg-[#D4AF37] text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Flame className="w-4 h-4" />
+              <span>Discover</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('omegle')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'omegle'
+                  ? 'bg-[#FF4E00] text-white shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="relative">
+                <Video className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1.5 bg-[#00FF85] w-2 h-2 rounded-full animate-ping" />
+              </div>
+              <span>Omegle Video</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('matches')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'matches' || activeTab === 'chat'
+                  ? 'bg-[#D4AF37] text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="relative">
+                <MessageCircle className="w-4 h-4" />
+                {totalUnread > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-[#FF4E00] text-white text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {totalUnread}
+                  </span>
+                )}
+              </div>
+              <span>Matches</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ghost')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'ghost'
+                  ? 'bg-[#D4AF37] text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <EyeOff className="w-4 h-4" />
+              <span>Ghost Mode</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'profile'
+                  ? 'bg-[#D4AF37] text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>Profile</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition ${
+                activeTab === 'admin'
+                  ? 'bg-[#D4AF37] text-black shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Admin</span>
+            </button>
+          </nav>
+
           {/* Identity Status & Quick Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <div
               onClick={() => setActiveTab('ghost')}
               className="flex flex-col items-end cursor-pointer group"
@@ -78,8 +163,8 @@ export const Navigation: React.FC = () => {
         </div>
       </header>
 
-      {/* Floating Editorial Bottom Navigation */}
-      <nav className="fixed bottom-6 left-0 right-0 z-40 px-4 pointer-events-none">
+      {/* Floating Editorial Bottom Navigation (Mobile & Tablet Only) */}
+      <nav className="fixed bottom-6 left-0 right-0 z-40 px-4 pointer-events-none lg:hidden">
         <div className="max-w-md md:max-w-xl mx-auto pointer-events-auto">
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full h-16 flex items-center justify-between px-6 shadow-2xl">
             {/* Discover */}

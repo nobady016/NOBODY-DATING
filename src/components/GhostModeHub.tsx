@@ -27,8 +27,11 @@ export const GhostModeHub: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md md:max-w-xl mx-auto px-4 py-6 pb-28 space-y-6">
-      {/* Editorial Header Banner */}
+    <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 lg:pb-12 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Column 1: Presence & Fuzzing */}
+        <div className="space-y-6">
+          {/* Editorial Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-[#0a0a12] p-6 border border-white/10 shadow-2xl">
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#7000FF]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="flex items-start justify-between relative z-10">
@@ -197,9 +200,12 @@ export const GhostModeHub: React.FC = () => {
           </div>
         </div>
       </div>
+        </div>
 
-      {/* Security & Chat Lock */}
-      <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-4">
+        {/* Column 2: Security & Calls */}
+        <div className="space-y-6">
+          {/* Security & Chat Lock */}
+          <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-4">
         <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#D4AF37] flex items-center gap-2">
           <Lock className="w-4 h-4" />
           <span>Chat Security & Biometric Lock</span>
@@ -310,6 +316,19 @@ export const GhostModeHub: React.FC = () => {
             <Video className="w-3.5 h-3.5" />
             <span>Video Call</span>
           </button>
+        </div>
+      </div>
+
+      {/* Privacy Architecture Guarantee Card */}
+      <div className="bg-white/5 border border-white/5 rounded-3xl p-5 space-y-2 text-left">
+        <div className="flex items-center gap-2 text-[#D4AF37]">
+          <Shield className="w-4 h-4" />
+          <span className="text-xs font-mono font-bold uppercase tracking-wider">Zero-Knowledge Architecture</span>
+        </div>
+        <p className="text-xs text-white/60 leading-relaxed font-sans">
+          NOBODY never logs your GPS coordinates or device fingerprint. Ghost Mode changes take effect across all matching algorithms instantly.
+        </p>
+      </div>
         </div>
       </div>
 

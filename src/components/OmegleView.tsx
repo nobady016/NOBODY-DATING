@@ -694,7 +694,7 @@ export const OmegleView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md md:max-w-xl mx-auto px-4 py-4 pb-28 space-y-4 text-left">
+    <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-28 lg:pb-12 space-y-5 text-left">
       {/* Header Banner */}
       <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-3 relative overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between">
@@ -829,9 +829,9 @@ export const OmegleView: React.FC = () => {
       </div>
 
       {/* Main Video Stage Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Remote Stranger Video Screen */}
-        <div className="relative h-64 md:h-72 bg-[#0a0a0f] rounded-3xl border border-white/10 overflow-hidden flex flex-col justify-between p-4 shadow-xl group">
+        <div className="relative h-64 sm:h-72 lg:h-96 xl:h-[420px] bg-[#0a0a0f] rounded-3xl border border-white/10 overflow-hidden flex flex-col justify-between p-4 shadow-xl group">
           {/* Real WebRTC Remote Video Stream */}
           <video
             ref={remoteVideoRef}
@@ -955,7 +955,7 @@ export const OmegleView: React.FC = () => {
         </div>
 
         {/* User Local Camera Screen */}
-        <div className="relative h-64 md:h-72 bg-[#0a0a0f] rounded-3xl border border-white/10 overflow-hidden flex flex-col justify-between p-4 shadow-xl">
+        <div className="relative h-64 sm:h-72 lg:h-96 xl:h-[420px] bg-[#0a0a0f] rounded-3xl border border-white/10 overflow-hidden flex flex-col justify-between p-4 shadow-xl">
           {isCamOn && !camPermissionDenied ? (
             <video
               ref={localVideoRef}

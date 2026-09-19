@@ -96,9 +96,36 @@ export const DiscoverSwipe: React.FC = () => {
     }
   };
 
+  // Desktop keyboard shortcuts support
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (!topProfile) return;
+
+      if (e.key === 'ArrowLeft') {
+        swipeLeft(topProfile.id);
+      } else if (e.key === 'ArrowRight') {
+        swipeRight(topProfile.id);
+      } else if (e.key === 'ArrowUp') {
+        superlike(topProfile.id);
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        setActivePhotoIndex(prev => ({
+          ...prev,
+          [topProfile.id]: ((prev[topProfile.id] || 0) + 1) % topProfile.photos.length
+        }));
+      } else if (e.key === 'z' || e.key === 'Z') {
+        rewindLastSwipe();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [topProfile, swipeLeft, swipeRight, superlike, rewindLastSwipe]);
+
   if (!topProfile) {
     return (
-      <div className="max-w-md mx-auto px-4 py-16 text-center space-y-6">
+      <div className="max-w-md lg:max-w-xl mx-auto px-4 py-16 text-center space-y-6">
         <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-500 animate-bounce">
           <Sparkles className="w-10 h-10" />
         </div>
@@ -121,189 +148,358 @@ export const DiscoverSwipe: React.FC = () => {
   const currentPhotoIdx = activePhotoIndex[topProfile.id] || 0;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-3 pb-28 relative space-y-3">
-      {/* Omegle Quick Video Chat Launch Banner */}
-      <div
-        onClick={() => setActiveTab('omegle')}
-        className="bg-black/80 border border-[#FF4E00]/40 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-[#FF4E00] transition group shadow-xl"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-full bg-[#FF4E00]/10 border border-[#FF4E00]/40 text-[#FF4E00] group-hover:scale-110 transition-transform">
-            <Video className="w-4 h-4 animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-serif italic text-sm font-bold text-white">Omegle Random Video Chat</span>
-              <span className="w-2 h-2 rounded-full bg-[#00FF85] animate-ping" />
+    <div className="w-full max-w-md lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-28 lg:pb-12 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Swipe Card & Controls */}
+        <div className="lg:col-span-6 xl:col-span-5 flex flex-col space-y-3 w-full max-w-md mx-auto lg:max-w-none">
+          {/* Omegle Quick Video Chat Launch Banner */}
+          <div
+            onClick={() => setActiveTab('omegle')}
+            className="bg-black/80 border border-[#FF4E00]/40 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-[#FF4E00] transition group shadow-xl"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-full bg-[#FF4E00]/10 border border-[#FF4E00]/40 text-[#FF4E00] group-hover:scale-110 transition-transform">
+                <Video className="w-4 h-4 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-serif italic text-sm font-bold text-white">Omegle Random Video Chat</span>
+                  <span className="w-2 h-2 rounded-full bg-[#00FF85] animate-ping" />
+                </div>
+                <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider block">
+                  Instant 1-on-1 Video Match • 24,180 Online
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider block">
-              Instant 1-on-1 Video Match • 24,180 Online
+            <span className="px-3 py-1 rounded-full bg-[#FF4E00] text-white font-mono text-[10px] font-bold uppercase tracking-wider group-hover:opacity-90 transition">
+              Join Live ⚡
             </span>
           </div>
-        </div>
-        <span className="px-3 py-1 rounded-full bg-[#FF4E00] text-white font-mono text-[10px] font-bold uppercase tracking-wider group-hover:opacity-90 transition">
-          Join Live ⚡
-        </span>
-      </div>
 
-      {/* Swipe Stack Container */}
-      <div className="relative h-[560px] w-full">
-        <AnimatePresence>
-          <motion.div
-            key={topProfile.id}
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0, x: -200 }}
-            className="absolute inset-0 rounded-3xl overflow-hidden border border-white/10 bg-[#121721] shadow-2xl flex flex-col select-none"
-          >
-            {/* Top Photo & Carousel Nav */}
-            <div className="relative flex-1 bg-[#050505] overflow-hidden group">
-              <img
-                src={topProfile.photos[currentPhotoIdx]}
-                alt={topProfile.name}
-                className="w-full h-full object-cover transition-transform duration-500"
-              />
-
-              {/* Top Photo Indicators */}
-              <div className="absolute top-3 left-3 right-3 flex items-center gap-1.5 z-20">
-                {topProfile.photos.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-1 flex-1 rounded-full transition-all ${
-                      idx === currentPhotoIdx ? 'bg-[#D4AF37] shadow-sm' : 'bg-white/30'
-                    }`}
+          {/* Swipe Stack Container */}
+          <div className="relative h-[560px] sm:h-[580px] w-full">
+            <AnimatePresence>
+              <motion.div
+                key={topProfile.id}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0, x: -200 }}
+                className="absolute inset-0 rounded-3xl overflow-hidden border border-white/10 bg-[#121721] shadow-2xl flex flex-col select-none"
+              >
+                {/* Top Photo & Carousel Nav */}
+                <div className="relative flex-1 bg-[#050505] overflow-hidden group">
+                  <img
+                    src={topProfile.photos[currentPhotoIdx]}
+                    alt={topProfile.name}
+                    className="w-full h-full object-cover transition-transform duration-500"
                   />
-                ))}
-              </div>
 
-              {/* Photo Tap Controls */}
-              <div
-                onClick={e => handlePrevPhoto(topProfile.id, topProfile.photos.length, e)}
-                className="absolute top-0 bottom-0 left-0 w-1/3 z-10 cursor-pointer"
-              />
-              <div
-                onClick={e => handleNextPhoto(topProfile.id, topProfile.photos.length, e)}
-                className="absolute top-0 bottom-0 right-0 w-1/3 z-10 cursor-pointer"
-              />
+                  {/* Top Photo Indicators */}
+                  <div className="absolute top-3 left-3 right-3 flex items-center gap-1.5 z-20">
+                    {topProfile.photos.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`h-1 flex-1 rounded-full transition-all ${
+                          idx === currentPhotoIdx ? 'bg-[#D4AF37] shadow-sm' : 'bg-white/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
 
-              {/* Top Badges (Distance, Verified, Compatibility) */}
-              <div className="absolute top-6 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-mono tracking-wider border border-white/10 uppercase">
-                  <MapPin className="w-3 h-3 text-[#FF4E00]" />
-                  <span>
-                    {ghostSettings.locationBlur
-                      ? `~${topProfile.distanceKm} km away`
-                      : `${topProfile.distanceKm}km • ${topProfile.locationName}`}
-                  </span>
+                  {/* Photo Tap Controls */}
+                  <div
+                    onClick={e => handlePrevPhoto(topProfile.id, topProfile.photos.length, e)}
+                    className="absolute top-0 bottom-0 left-0 w-1/3 z-10 cursor-pointer"
+                  />
+                  <div
+                    onClick={e => handleNextPhoto(topProfile.id, topProfile.photos.length, e)}
+                    className="absolute top-0 bottom-0 right-0 w-1/3 z-10 cursor-pointer"
+                  />
+
+                  {/* Top Badges (Distance, Verified, Compatibility) */}
+                  <div className="absolute top-6 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-mono tracking-wider border border-white/10 uppercase">
+                      <MapPin className="w-3 h-3 text-[#FF4E00]" />
+                      <span>
+                        {ghostSettings.locationBlur
+                          ? `~${topProfile.distanceKm} km away`
+                          : `${topProfile.distanceKm}km • ${topProfile.locationName}`}
+                      </span>
+                    </div>
+
+                    {topProfile.compatibilityScore && (
+                      <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#00FF85]/10 backdrop-blur-md text-[#00FF85] text-[10px] font-mono border border-[#00FF85]/30 uppercase tracking-widest font-bold">
+                        <Sparkles className="w-3 h-3" />
+                        <span>{topProfile.compatibilityScore}% Match</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gradient Bottom Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#050505] via-[#050505]/80 to-transparent pointer-events-none" />
+
+                  {/* Card Footer Info with Editorial Typography */}
+                  <div className="absolute bottom-3 left-4 right-4 z-20 space-y-2 pointer-events-auto">
+                    <div className="flex items-end justify-between">
+                      <div className="space-y-0.5">
+                        <h2 className="text-4xl sm:text-5xl font-serif italic text-white leading-none">
+                          {topProfile.name},{' '}
+                          <span className="text-[#D4AF37] font-serif not-italic">{topProfile.age}</span>
+                        </h2>
+                        <p className="text-xs text-white/60 tracking-wide line-clamp-1">
+                          {topProfile.bio}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedProfileDetail(topProfile)}
+                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition shrink-0"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Pill Tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-wider text-white/80 font-medium flex items-center gap-1">
+                        <Briefcase className="w-3 h-3 text-[#D4AF37]" />
+                        <span>{topProfile.job}</span>
+                      </span>
+                      {topProfile.interests.slice(0, 3).map((interest, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-wider text-white/80 font-medium"
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* AI Opener Trigger */}
+                    <div className="pt-1">
+                      <button
+                        onClick={e => handleGenerateIcebreaker(topProfile, e)}
+                        className="w-full py-1.5 px-3 rounded-full bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 text-white/90 text-[10px] uppercase tracking-widest font-mono flex items-center justify-center gap-1.5 transition"
+                      >
+                        <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                        <span>{isGeneratingIcebreaker ? 'Generating Opener...' : 'AI Icebreaker Opener'}</span>
+                      </button>
+
+                      {aiIcebreaker && (
+                        <div className="mt-2 p-2.5 rounded-2xl bg-[#0a0a14] border border-[#D4AF37]/30 text-xs text-zinc-200 italic font-serif">
+                          "{aiIcebreaker}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Editorial Swipe Action Controls */}
+          <div className="flex items-center justify-between gap-3 mt-4">
+            {/* Rewind */}
+            <button
+              onClick={rewindLastSwipe}
+              className="w-12 h-12 rounded-full border border-white/20 bg-white/5 text-white/60 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0"
+              title="Rewind Last Swipe [Z]"
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
+
+            {/* Pass (Dislike) */}
+            <button
+              onClick={() => swipeLeft(topProfile.id)}
+              className="w-14 h-14 rounded-full border border-[#FF4E00]/40 text-[#FF4E00] hover:bg-[#FF4E00]/10 flex items-center justify-center transition-colors shrink-0"
+              title="Pass [←]"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Connect Emotionally (Like) - Gold Pill */}
+            <button
+              onClick={() => swipeRight(topProfile.id)}
+              className="flex-1 h-[54px] bg-[#D4AF37] text-black rounded-full flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs hover:scale-[1.02] transition-transform shadow-xl shadow-[#D4AF37]/10"
+              title="Connect Emotionally [→]"
+            >
+              <Heart className="w-4 h-4 fill-black" />
+              <span>Connect</span>
+            </button>
+
+            {/* Super Like */}
+            <button
+              onClick={() => superlike(topProfile.id)}
+              className="w-14 h-14 rounded-full border border-sky-400/40 text-sky-400 hover:bg-sky-400/10 flex items-center justify-center transition-colors shrink-0"
+              title="Super Like [↑]"
+            >
+              <Star className="w-5 h-5 fill-sky-400/20" />
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column: Desktop Profile Showcase & Quick Actions (Hidden on Mobile) */}
+        <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col space-y-5 text-left">
+          {/* Main Desktop Profile Showcase Card */}
+          <div className="bg-[#0a0a10] border border-white/10 rounded-3xl p-6 space-y-6 shadow-2xl relative overflow-hidden">
+            {/* Top Header & Photo Thumbnails */}
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-serif italic text-white font-bold">
+                      {topProfile.name}, <span className="text-[#D4AF37] not-italic">{topProfile.age}</span>
+                    </h1>
+                    {topProfile.isVerified && (
+                      <span className="p-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30" title="Verified Identity">
+                        <ShieldCheck className="w-4 h-4" />
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-mono text-white/50 uppercase tracking-wider mt-1 flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#FF4E00]" />
+                    <span>{topProfile.locationName} • {topProfile.distanceKm} km away</span>
+                  </p>
                 </div>
 
                 {topProfile.compatibilityScore && (
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#00FF85]/10 backdrop-blur-md text-[#00FF85] text-[10px] font-mono border border-[#00FF85]/30 uppercase tracking-widest font-bold">
-                    <Sparkles className="w-3 h-3" />
-                    <span>{topProfile.compatibilityScore}% Match</span>
+                  <div className="px-3.5 py-1.5 rounded-full bg-[#00FF85]/10 border border-[#00FF85]/30 text-[#00FF85] text-xs font-mono font-bold flex items-center gap-1.5 shadow-md">
+                    <Sparkles className="w-4 h-4" />
+                    <span>{topProfile.compatibilityScore}% Compatibility</span>
                   </div>
                 )}
               </div>
 
-              {/* Gradient Bottom Overlay */}
-              <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#050505] via-[#050505]/80 to-transparent pointer-events-none" />
-
-              {/* Card Footer Info with Editorial Typography */}
-              <div className="absolute bottom-3 left-4 right-4 z-20 space-y-2 pointer-events-auto">
-                <div className="flex items-end justify-between">
-                  <div className="space-y-0.5">
-                    <h2 className="text-4xl sm:text-5xl font-serif italic text-white leading-none">
-                      {topProfile.name},{' '}
-                      <span className="text-[#D4AF37] font-serif not-italic">{topProfile.age}</span>
-                    </h2>
-                    <p className="text-xs text-white/60 tracking-wide line-clamp-1">
-                      {topProfile.bio}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedProfileDetail(topProfile)}
-                    className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition shrink-0"
-                  >
-                    <Info className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Pill Tags */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-wider text-white/80 font-medium flex items-center gap-1">
-                    <Briefcase className="w-3 h-3 text-[#D4AF37]" />
-                    <span>{topProfile.job}</span>
-                  </span>
-                  {topProfile.interests.slice(0, 3).map((interest, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-wider text-white/80 font-medium"
+              {/* Photo Strip Gallery (Interactive clickable thumbnails) */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-wider block">
+                  Photos ({topProfile.photos.length}) — Click to view:
+                </span>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {topProfile.photos.map((photo, pIdx) => (
+                    <div
+                      key={pIdx}
+                      onClick={() => setActivePhotoIndex(prev => ({ ...prev, [topProfile.id]: pIdx }))}
+                      className={`relative h-24 rounded-2xl overflow-hidden cursor-pointer border-2 transition group ${
+                        pIdx === currentPhotoIdx
+                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30 scale-[1.02]'
+                          : 'border-white/10 hover:border-white/40'
+                      }`}
                     >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-
-                {/* AI Opener Trigger */}
-                <div className="pt-1">
-                  <button
-                    onClick={e => handleGenerateIcebreaker(topProfile, e)}
-                    className="w-full py-1.5 px-3 rounded-full bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 text-white/90 text-[10px] uppercase tracking-widest font-mono flex items-center justify-center gap-1.5 transition"
-                  >
-                    <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                    <span>{isGeneratingIcebreaker ? 'Generating Opener...' : 'AI Icebreaker Opener'}</span>
-                  </button>
-
-                  {aiIcebreaker && (
-                    <div className="mt-2 p-2.5 rounded-2xl bg-[#0a0a14] border border-[#D4AF37]/30 text-xs text-zinc-200 italic font-serif">
-                      "{aiIcebreaker}"
+                      <img src={photo} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      {pIdx === currentPhotoIdx && (
+                        <div className="absolute inset-0 bg-[#D4AF37]/15 pointer-events-none" />
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
 
-      {/* Editorial Swipe Action Controls */}
-      <div className="flex items-center justify-between gap-3 mt-6">
-        {/* Rewind */}
-        <button
-          onClick={rewindLastSwipe}
-          className="w-12 h-12 rounded-full border border-white/20 bg-white/5 text-white/60 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0"
-          title="Rewind Last Swipe"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
+            {/* Bio & Lifestyle Information */}
+            <div className="space-y-3 pt-2 border-t border-white/10">
+              <span className="text-[10px] font-mono text-[#D4AF37] uppercase tracking-widest font-bold block">
+                About {topProfile.name}
+              </span>
+              <p className="text-sm text-white/80 leading-relaxed font-sans bg-white/5 p-4 rounded-2xl border border-white/5">
+                "{topProfile.bio}"
+              </p>
+            </div>
 
-        {/* Pass (Dislike) */}
-        <button
-          onClick={() => swipeLeft(topProfile.id)}
-          className="w-14 h-14 rounded-full border border-[#FF4E00]/40 text-[#FF4E00] hover:bg-[#FF4E00]/10 flex items-center justify-center transition-colors shrink-0"
-          title="Pass"
-        >
-          <X className="w-6 h-6" />
-        </button>
+            {/* Career & Education Grid */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
+                <div className="flex items-center gap-2 text-white/50 text-[11px] font-mono uppercase">
+                  <Briefcase className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Work & Career</span>
+                </div>
+                <div className="text-xs font-semibold text-white">{topProfile.job}</div>
+              </div>
 
-        {/* Connect Emotionally (Like) - Gold Pill */}
-        <button
-          onClick={() => swipeRight(topProfile.id)}
-          className="flex-1 h-[54px] bg-[#D4AF37] text-black rounded-full flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs hover:scale-[1.02] transition-transform shadow-xl shadow-[#D4AF37]/10"
-          title="Connect Emotionally"
-        >
-          <Heart className="w-4 h-4 fill-black" />
-          <span>Connect</span>
-        </button>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
+                <div className="flex items-center gap-2 text-white/50 text-[11px] font-mono uppercase">
+                  <GraduationCap className="w-3.5 h-3.5 text-[#00FF85]" />
+                  <span>Education</span>
+                </div>
+                <div className="text-xs font-semibold text-white">{topProfile.education}</div>
+              </div>
+            </div>
 
-        {/* Super Like */}
-        <button
-          onClick={() => superlike(topProfile.id)}
-          className="w-14 h-14 rounded-full border border-sky-400/40 text-sky-400 hover:bg-sky-400/10 flex items-center justify-center transition-colors shrink-0"
-          title="Super Like"
-        >
-          <Star className="w-5 h-5 fill-sky-400/20" />
-        </button>
+            {/* Interests & Passions */}
+            <div className="space-y-2 pt-2">
+              <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest block">
+                Shared Passions & Interests
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {topProfile.interests.map((tag, tIdx) => (
+                  <span
+                    key={tIdx}
+                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-white/90 hover:border-[#D4AF37]/50 transition"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Icebreaker Opener Box */}
+            <div className="bg-gradient-to-r from-[#FF4E00]/10 via-[#D4AF37]/10 to-[#7000FF]/10 border border-[#D4AF37]/30 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#D4AF37] uppercase">
+                  <Sparkles className="w-4 h-4" />
+                  <span>AI Conversation Starter</span>
+                </div>
+                <button
+                  onClick={e => handleGenerateIcebreaker(topProfile, e)}
+                  disabled={isGeneratingIcebreaker}
+                  className="px-3 py-1 rounded-full bg-[#D4AF37] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {isGeneratingIcebreaker ? 'Generating...' : 'Regenerate'}
+                </button>
+              </div>
+
+              <p className="text-xs text-white/90 italic font-serif">
+                {aiIcebreaker ? `"${aiIcebreaker}"` : `Click "Regenerate" to create a personalized, high-response opener tailored to ${topProfile.name}'s interests!`}
+              </p>
+            </div>
+
+            {/* Safety & Reporting Controls */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono text-white/40">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-[#00FF85]" />
+                <span>100% Free & Verified Community</span>
+              </span>
+              <button
+                onClick={() => setReportModalProfile(topProfile)}
+                className="text-white/40 hover:text-[#FF4E00] flex items-center gap-1 transition"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                <span>Report / Block</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Keyboard Shortcuts Helper Card */}
+          <div className="bg-black/60 border border-white/10 rounded-2xl p-4 flex items-center justify-between text-[11px] font-mono text-white/60">
+            <span className="uppercase tracking-wider font-bold text-white/80">Desktop Shortcuts:</span>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <kbd className="px-2 py-0.5 rounded bg-white/10 text-white font-bold border border-white/20">←</kbd> Pass
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="px-2 py-0.5 rounded bg-white/10 text-[#D4AF37] font-bold border border-white/20">→</kbd> Like
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="px-2 py-0.5 rounded bg-white/10 text-sky-400 font-bold border border-white/20">↑</kbd> Super Like
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="px-2 py-0.5 rounded bg-white/10 text-white font-bold border border-white/20">Space</kbd> Next Photo
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="px-2 py-0.5 rounded bg-white/10 text-white font-bold border border-white/20">Z</kbd> Rewind
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Profile Full Detail Modal */}

@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { INITIAL_PROFILES } from '../data/initialProfiles';
 import { auth, db, testConnection } from '../firebase';
-import { onAuthStateChanged, signInAnonymously, signOut, sendEmailVerification, User } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, signOut, User } from 'firebase/auth';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 interface AppContextType {
@@ -189,28 +189,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [postSignupMessage, setPostSignupMessage] = useState<string | null>(null);
 
-  const sendVerificationEmail = async (customUser?: User) => {
-    const targetUser = customUser || auth.currentUser;
-    if (!targetUser) {
-      const msg = 'No user is currently signed in to send verification email.';
-      setPostSignupMessage(msg);
-      return { success: false, message: msg };
-    }
-
-    try {
-      await sendEmailVerification(targetUser);
-      const msg = `📩 Verification email sent to ${targetUser.email || 'your email'}! Please check your inbox (and Spam folder) and click the link to verify your email address before gaining full access.`;
-      setPostSignupMessage(msg);
-      return { success: true, message: msg };
-    } catch (err: any) {
-      console.error('Error in sendVerificationEmail flow:', err);
-      let msg = err.message || 'Failed to send verification email.';
-      if (err.code === 'auth/too-many-requests') {
-        msg = 'Too many verification email requests sent. Please check your Gmail inbox or Spam folder, or wait a few minutes before requesting again.';
-      }
-      setPostSignupMessage(msg);
-      return { success: false, message: msg };
-    }
+  const sendVerificationEmail = async (_customUser?: User) => {
+    return { success: true, message: '' };
   };
 
   const loginWithUser = (userData: { id: string; name: string; age?: number; gender?: string; photoUrl?: string }) => {

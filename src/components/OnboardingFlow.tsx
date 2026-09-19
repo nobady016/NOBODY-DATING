@@ -94,8 +94,8 @@ export const OnboardingFlow: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#0a0a0f] border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden text-left space-y-6">
+    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="max-w-lg md:max-w-xl w-full bg-[#0a0a0f] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-left space-y-6">
         {/* Progress Bar */}
         <div className="flex items-center gap-1.5">
           {[1, 2, 3, 4, 5, 6].map(i => (

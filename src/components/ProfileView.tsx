@@ -158,92 +158,133 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md md:max-w-xl mx-auto px-4 py-4 pb-28 space-y-6">
-      {/* Profile Header Card */}
-      <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-6 text-center space-y-4 relative overflow-hidden shadow-2xl">
-        <div className="relative w-32 h-32 mx-auto group">
-          <div className="w-full h-full rounded-full p-[3px] bg-gradient-to-tr from-[#FF4E00] via-[#D4AF37] to-white shadow-2xl overflow-hidden">
-            <img
-              src={currentUser.photos[0] || PRESET_PHOTOS[0]}
-              alt={currentUser.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+    <div className="w-full max-w-md md:max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-28 lg:pb-12 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Profile Card & Account Privacy Settings */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Profile Header Card */}
+          <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-6 text-center space-y-4 relative overflow-hidden shadow-2xl">
+            <div className="relative w-32 h-32 mx-auto group">
+              <div className="w-full h-full rounded-full p-[3px] bg-gradient-to-tr from-[#FF4E00] via-[#D4AF37] to-white shadow-2xl overflow-hidden">
+                <img
+                  src={currentUser.photos[0] || PRESET_PHOTOS[0]}
+                  alt={currentUser.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+
+              {/* Quick Camera File Upload Overlay */}
+              <label
+                htmlFor="profile-header-photo-input"
+                className="absolute bottom-0 right-0 p-2.5 rounded-full bg-[#D4AF37] text-black shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition border-2 border-[#0a0a0f] flex items-center justify-center z-10"
+                title="Upload or Change Profile Photo"
+              >
+                <Camera className="w-4 h-4" />
+                <input
+                  id="profile-header-photo-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {currentUser.isVerified && (
+                <span
+                  className="absolute top-0 right-0 p-1.5 rounded-full bg-sky-400 text-black shadow-lg border-2 border-[#0a0a0f]"
+                  title="Verified Profile"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                </span>
+              )}
+            </div>
+
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-serif italic text-white leading-none">
+                {currentUser.name},{' '}
+                <span className="text-[#D4AF37] font-serif not-italic">{currentUser.age}</span>
+              </h1>
+              <p className="text-xs text-white/60 mt-1 font-mono uppercase tracking-wider">
+                {currentUser.job} • {currentUser.company}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-white text-xs font-mono uppercase tracking-widest flex items-center gap-1.5 hover:bg-white/10 transition"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+              </button>
+
+              {!currentUser.isVerified && (
+                <button
+                  onClick={handleRequestVerification}
+                  className="px-5 py-2.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-xs font-mono uppercase tracking-widest flex items-center gap-1.5 hover:bg-sky-500/20 transition"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verify</span>
+                </button>
+              )}
+            </div>
+
+            {photoMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-xs text-[#D4AF37] font-mono flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{photoMessage}</span>
+              </motion.div>
+            )}
+
+            {verificationSuccess && (
+              <div className="p-2.5 rounded-2xl bg-[#00FF85]/10 border border-[#00FF85]/30 text-xs text-[#00FF85] font-mono flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#00FF85]" />
+                <span>AI Face Scan Verified! Badge Unlocked.</span>
+              </div>
+            )}
           </div>
 
-          {/* Quick Camera File Upload Overlay */}
-          <label
-            htmlFor="profile-header-photo-input"
-            className="absolute bottom-0 right-0 p-2.5 rounded-full bg-[#D4AF37] text-black shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition border-2 border-[#0a0a0f] flex items-center justify-center z-10"
-            title="Upload or Change Profile Photo"
-          >
-            <Camera className="w-4 h-4" />
-            <input
-              id="profile-header-photo-input"
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
-          </label>
+          {/* Account & Privacy Controls */}
+          <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-3 text-left shadow-2xl">
+            <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#D4AF37]">
+              Account & Privacy Controls
+            </h2>
 
-          {currentUser.isVerified && (
-            <span
-              className="absolute top-0 right-0 p-1.5 rounded-full bg-sky-400 text-black shadow-lg border-2 border-[#0a0a0f]"
-              title="Verified Profile"
-            >
-              <ShieldCheck className="w-4 h-4" />
-            </span>
-          )}
-        </div>
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={logoutUser}
+                className="w-full py-3 rounded-2xl bg-white/10 border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4 text-[#D4AF37]" />
+                <span>Sign Out of Account</span>
+              </button>
 
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-serif italic text-white leading-none">
-            {currentUser.name},{' '}
-            <span className="text-[#D4AF37] font-serif not-italic">{currentUser.age}</span>
-          </h1>
-          <p className="text-xs text-white/60 mt-1 font-mono uppercase tracking-wider">
-            {currentUser.job} • {currentUser.company}
-          </p>
-        </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full py-3 rounded-2xl bg-[#FF4E00]/10 border border-[#FF4E00]/30 text-[#FF4E00] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#FF4E00]/20 transition flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Account & Data (Permanent)</span>
+              </button>
+            </div>
 
-        <div className="flex items-center justify-center gap-3 pt-1">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-white text-xs font-mono uppercase tracking-widest flex items-center gap-1.5 hover:bg-white/10 transition"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
-          </button>
-
-          {!currentUser.isVerified && (
-            <button
-              onClick={handleRequestVerification}
-              className="px-5 py-2.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-xs font-mono uppercase tracking-widest flex items-center gap-1.5 hover:bg-sky-500/20 transition"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verify</span>
-            </button>
-          )}
-        </div>
-
-        {photoMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-xs text-[#D4AF37] font-mono flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{photoMessage}</span>
-          </motion.div>
-        )}
-
-        {verificationSuccess && (
-          <div className="p-2.5 rounded-2xl bg-[#00FF85]/10 border border-[#00FF85]/30 text-xs text-[#00FF85] font-mono flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-[#00FF85]" />
-            <span>AI Face Scan Verified! Badge Unlocked.</span>
+            <div className="pt-2 text-center border-t border-white/5">
+              <button
+                onClick={resetOnboarding}
+                className="text-xs text-white/40 hover:text-[#D4AF37] font-mono uppercase tracking-widest underline"
+              >
+                Re-run Onboarding Wizard
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* Right Column: Photos & Profile Information */}
+        <div className="lg:col-span-7 space-y-6">
 
       {/* Profile Photo Management Gallery */}
       <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-4 text-left shadow-2xl">
@@ -478,43 +519,10 @@ export const ProfileView: React.FC = () => {
               ))}
             </div>
           </div>
-
-          {/* Google Play Store Data & Account Controls */}
-          <div className="bg-[#0a0a0f] rounded-3xl border border-white/10 p-5 space-y-3">
-            <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-[#D4AF37]">
-              Google Play Account & Privacy Controls
-            </h2>
-
-            <div className="space-y-2 pt-1">
-              <button
-                onClick={logoutUser}
-                className="w-full py-3 rounded-2xl bg-white/10 border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition flex items-center justify-center gap-2"
-              >
-                <LogOut className="w-4 h-4 text-[#D4AF37]" />
-                <span>Sign Out of Account</span>
-              </button>
-
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="w-full py-3 rounded-2xl bg-[#FF4E00]/10 border border-[#FF4E00]/30 text-[#FF4E00] font-mono text-xs font-bold uppercase tracking-wider hover:bg-[#FF4E00]/20 transition flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete Account & Data (Permanent)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Re-run Onboarding Option */}
-          <div className="pt-2 text-center">
-            <button
-              onClick={resetOnboarding}
-              className="text-xs text-white/40 hover:text-[#D4AF37] font-mono uppercase tracking-widest underline"
-            >
-              Re-run Onboarding Wizard
-            </button>
-          </div>
         </div>
       )}
+        </div>
+      </div>
 
       {/* Delete Account Confirmation Modal */}
       <AnimatePresence>
