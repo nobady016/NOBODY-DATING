@@ -2,7 +2,7 @@
 
 An exclusive social networking and chat platform designed for anonymous interactions, rich media sharing, live calls, and match discovery.
 
-🌐 **Live Demo:** [https://ais-pre-ykwuegkrzagh5dqus6amek-353208909594.asia-east1.run.app](https://ais-pre-ykwuegkrzagh5dqus6amek-353208909594.asia-east1.run.app)
+🌐 **Live Demo:** [https://ais-pre-ykwuegkrzagh5dqus6amek-353208909594.asia-east1.run.app](nobody-kappa.vercel.app/)
 
 ---
 
