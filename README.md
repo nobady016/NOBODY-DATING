@@ -2,7 +2,7 @@
 
 An exclusive social networking and chat platform designed for anonymous interactions, rich media sharing, live calls, and match discovery.
 
-🌐 **Live Demo:** [nobody-kappa.vercel.app/](nobody-kappa.vercel.app/)
+🌐 **Live Demo:** [https://nobody-kappa.vercel.app](https://nobody-kappa.vercel.app)
 
 ---
 
